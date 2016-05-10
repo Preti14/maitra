@@ -1,0 +1,60 @@
+/*PRINT*/
+@media print {
+    a:link:after, a:visited:after {
+        content: "";
+    }
+}
+
+/*GENERAL*/
+#label_left_bottom {
+    border-radius:15px;
+    border: 1px solid #000;
+    padding:4px 10px;
+    width:224px;
+    height:77px;
+
+}
+.list-view{font-weight: bold; font-size: 16px;}
+.list-view label{  padding-left: 10px;}
+.code-number{ border:1px solid #000; text-align: center; }
+
+#label_left_bottom, #label_middle, #label_right_top {
+    float: left;
+    margin: 2px 5px 0 2px;
+}
+
+/*RIGHT TOP*/
+#label_right_top {
+    border: 1px solid #000;
+    border-radius:15px;
+    padding: 10px;
+    width: 265px;
+    height:142px;
+    color:#000;
+}
+#label_middle{
+    border: 1px solid #000;
+    color:#000;
+    border-radius:15px;
+    padding: 10px;
+    width: 420px;
+}
+#label_right_top .code {
+    font-weight: bolder;
+    font-size: 40pt;
+}
+
+#label_right_top .code_number {
+    float: right;
+}
+#label_left_bottom .code_number {
+    float: left; font-size: 40px; font-weight: bold; padding-left: 15px;
+    color:#000;
+}
+#label_right_top .volume_part_case {
+    font-weight: bolder;
+    font-size: 24pt;
+    font-family: monospace;
+}
+
+/*LEFT BOTTOM*/

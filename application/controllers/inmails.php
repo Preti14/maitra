@@ -1,0 +1,1070 @@
+<?php if (!defined('BASEPATH')) exit('No direct script access allowed');
+/**
+ * Campaign Select
+ * This model serves to fetch campaign data.
+ */
+class Inmails extends CI_Model
+{
+
+	function __construct()
+	{
+		parent::__construct();
+		$ci =& get_instance();
+	}
+	
+	function inmail_staging_rows()
+	{
+		$query = $this->db->query('SELECT * FROM mails WHERE (`type`=1 and `status`=0) ORDER BY `id` DESC ');
+		$count = $query->num_rows();//`status`=0
+		if($count)
+			 return $count;
+	}
+	
+	function staging_list($limit='', $start='')
+	{
+		if($limit!='')
+	   		$limit = " LIMIT $start,$limit";
+		$query = $this->db->query('SELECT * FROM mails WHERE (`type`=1 and `status`=0) ORDER BY `id` DESC '.$limit);
+		$result = $query->result_array();//`subject` LIKE "%ICGS SAGAR%"
+		if($result)
+			 return $result;
+	}
+	
+	
+	function inmail_total_rows($dt='', $limit='',$start=''){
+		$ms_session = $this->session->userdata('mail_status');
+		$mail_status = isset($ms_session)?$ms_session:1;
+		if($mail_status == 2)
+			$ms_qry = 'm.status=2';
+		else if($mail_status == 1)
+			$ms_qry = 'm.status=1';
+		else if($mail_status == 0)
+			$ms_qry = 'm.status=1 or m.status=2 or m.status=3';
+			
+		if($dt=='day')
+			$dtqry = " and m.recieved_date = '".date("d-m-Y")."'";
+		else if($dt=='week'){
+			$current_dayname = date("l");         
+			$from_date = date("d-m-Y",strtotime('monday this week'));
+			$to_date = date("d-m-Y",strtotime("$current_dayname this week"));
+			$dtqry = " and (m.recieved_date BETWEEN '".$from_date."' AND '".$to_date."') ";
+		}else if($dt=='month'){
+			$current_dayname = date("l");         
+			$from_date = date("d-m-Y",strtotime('first day of this month'));
+			$to_date = date("d-m-Y",strtotime("$current_dayname last day of this month"));
+			$dtqry = " and (m.recieved_date BETWEEN '".$from_date."' AND '".$to_date."') ";
+		}
+		else
+			$dtqry ="";
+			
+		if($limit!='')
+	   		$limit = " LIMIT $start,$limit";
+			
+		$query = $this->db->query('SELECT m.*,d.division, sd.code as subdivision  FROM mails m 
+		                           LEFT JOIN division d on d.id =m.division_id
+								   LEFT JOIN subdivision sd on sd.id =m.subdivision_id
+								   WHERE m.type=1 and ( '.$ms_qry.')'.$dtqry.' ORDER BY m.id DESC'.$limit);
+							   
+		$mails_count=$query->num_rows();
+		return $mails_count;
+	}
+	function distributed_list($dt='', $limit='',$start='')
+	{	
+		$ms_session = $this->session->userdata('mail_status');
+		$mail_status = isset($ms_session)?$ms_session:1;
+		
+		//echo "test ".$mail_status;
+		if($mail_status == 2)
+			$ms_qry = 'm.status=2';
+		else if($mail_status == 1)
+			$ms_qry = 'm.status=1';
+		else if($mail_status == 0)
+			$ms_qry = 'm.status=1 or m.status=2 or m.status=3';
+			
+			
+		if($dt=='day')
+			$dtqry = " and m.recieved_date = '".date("d-m-Y")."'";
+		else if($dt=='week'){
+			$current_dayname = date("l");         
+			$from_date = date("d-m-Y",strtotime('monday this week'));
+			$to_date = date("d-m-Y",strtotime("$current_dayname this week"));
+			$dtqry = " and (m.recieved_date BETWEEN '".$from_date."' AND '".$to_date."') ";
+		}else if($dt=='month'){
+			$current_dayname = date("l");         
+			$from_date = date("d-m-Y",strtotime('first day of this month'));
+			$to_date = date("d-m-Y",strtotime("$current_dayname last day of this month"));
+			$dtqry = " and (m.recieved_date BETWEEN '".$from_date."' AND '".$to_date."') ";
+		}
+		else
+			$dtqry ="";
+			
+		if($limit!='')
+	   		$limit = " LIMIT $start,$limit";
+	
+		$query = $this->db->query('SELECT m.id,m.remarks,m.date,m.mail_no,m.mail_ref,m.type,m.subject,m.language,m.recieved_date,m.owner,m.action_date,m.close_date,m.created_on,m.updated_on,m.created_by,m.updated_by,m.status,m.division_id,m.subdivision_id,m.validation,d.division, sd.code as subdivision ,ma.title as `from`, mb.title as `to`, mc.title as `cc` FROM mails m 
+		                           LEFT JOIN division d on d.id =m.division_id
+								   LEFT JOIN subdivision sd on sd.id =m.subdivision_id
+								   LEFT JOIN mail_address ma on ma.mail_id =m.id AND ma.type=1
+								   LEFT JOIN mail_address mb on mb.mail_id =m.id AND mb.type=2
+								   LEFT JOIN mail_address mc on mc.mail_id =m.id AND mc.type=3
+								   WHERE m.type=1 AND ( '.$ms_qry.')'.$dtqry.' ORDER BY m.id DESC '.$limit);
+							   
+		$mails=$query->result_array();
+		if(!empty($mails)){
+			$i=0;
+						
+			return $mails;
+		}
+	}
+	
+	
+	function distributed_alllist($dt='')
+	{	
+		$ms_session = $this->session->userdata('mail_status');
+		$mail_status = isset($ms_session)?$ms_session:1;
+		if($mail_status == 2)
+			$ms_qry = 'm.status=2';
+		else if($mail_status == 1)
+			$ms_qry = 'm.status=1';
+		else if($mail_status == 0)
+			$ms_qry = 'm.status=1 or m.status=2 or m.status=3 ';
+			
+		if($dt=='day')
+			$dtqry = " and m.recieved_date = '".date("d-m-Y")."'";
+		else if($dt=='week'){
+			$current_dayname = date("l");         
+			$from_date = date("d-m-Y",strtotime('monday this week'));
+			$to_date = date("d-m-Y",strtotime("$current_dayname this week"));
+			$dtqry = " and (m.recieved_date BETWEEN '".$from_date."' AND '".$to_date."') ";
+		}else if($dt=='month'){
+			$current_dayname = date("l");         
+			$from_date = date("d-m-Y",strtotime('first day of this month'));
+			$to_date = date("d-m-Y",strtotime("$current_dayname last day of this month"));
+			$dtqry = " and (m.recieved_date BETWEEN '".$from_date."' AND '".$to_date."') ";
+		}
+		else
+			$dtqry ="";
+			
+					
+		$query = $this->db->query('SELECT m.id,m.remarks,m.date,m.mail_no,m.mail_ref,m.type,m.subject,m.language,m.recieved_date,m.owner,m.action_date,m.close_date,m.created_on,m.updated_on,m.created_by,m.updated_by,m.status,m.division_id,m.subdivision_id,m.validation,d.division, sd.code as subdivision FROM mails m 
+		                           LEFT JOIN division d on d.id =m.division_id
+								   LEFT JOIN subdivision sd on sd.id =m.subdivision_id 
+								   WHERE m.type=1 and ( '.$ms_qry.')'.$dtqry.' ORDER BY m.id DESC limit 0,10');
+							   
+		$mails=$query->result_array();
+		if(!empty($mails)){$i=0;
+			foreach($mails as $row){
+				$from_address_qry = $this->db->query('SELECT title FROM mail_address WHERE (mail_id = "'.$row['id'].'" and type=1)');
+				$from_mail_address =$from_address_qry->row_array();
+				$mails[$i]['from']=$from_mail_address;
+				
+				$to_address_qry = $this->db->query('SELECT title FROM mail_address WHERE (mail_id = "'.$row['id'].'" and type=2)');
+				$to_mail_adress =$to_address_qry->result_array();
+				$res_toadd ="";
+				foreach($to_mail_adress as $toadd){
+					$res_toadd .= $toadd['title'].", ";
+				}
+				 $mails[$i]['to'] = rtrim($res_toadd,", ");
+				 
+				 $cc_address_qry = $this->db->query('SELECT title FROM mail_address WHERE (mail_id = "'.$row['id'].'" and type=3)');
+				$cc_mail_adress =$cc_address_qry->result_array();
+				$res_ccadd ="";
+				foreach($cc_mail_adress as $ccadd){
+					$res_ccadd .= $ccadd['title'].", ";
+				}
+				 $mails[$i]['cc'] = rtrim($res_ccadd,", ");
+				 
+				$i++;
+			}//echo "<pre>";print_r($mails);
+			
+			return $mails;
+		}
+	}
+	
+	
+	
+	function distributed_searchlist($dt='', $searchval='')
+	{	
+		$ms_session = $this->session->userdata('mail_status');
+		$mail_status = isset($ms_session)?$ms_session:1;
+		if($mail_status == 2)
+			$ms_qry = 'm.status=2';
+		else if($mail_status == 1)
+			$ms_qry = 'm.status=1';
+		else if($mail_status == 0)
+			$ms_qry = 'm.status=1 or m.status=2 or m.status=3';
+			
+		if($dt=='day')
+			$dtqry = " and m.recieved_date = '".date("d-m-Y")."'";
+		else if($dt=='week'){
+			$current_dayname = date("l");         
+			$from_date = date("d-m-Y",strtotime('monday this week'));
+			$to_date = date("d-m-Y",strtotime("$current_dayname this week"));
+			$dtqry = " and (m.recieved_date BETWEEN '".$from_date."' AND '".$to_date."') ";
+		}else if($dt=='month'){
+			$current_dayname = date("l");         
+			$from_date = date("d-m-Y",strtotime('first day of this month'));
+			$to_date = date("d-m-Y",strtotime("$current_dayname last day of this month"));
+			$dtqry = " and (m.recieved_date BETWEEN '".$from_date."' AND '".$to_date."') ";
+		}
+		else
+			$dtqry ="";
+			
+		if($searchval!='')
+	   		//$searchval = " LIMIT $start,$limit";
+			$searchval = " m.subject LIKE '%".trim($searchval)."%' OR m.mail_ref LIKE '%".trim($searchval)."%' AND ";
+			
+		$query = $this->db->query('SELECT m.id,m.remarks,m.date,m.mail_no,m.mail_ref,m.type,m.subject,m.language,m.recieved_date,m.owner,m.action_date,m.close_date,m.created_on,m.updated_on,m.created_by,m.updated_by,m.status,m.division_id,m.subdivision_id,m.validation,d.division, sd.code as subdivision  FROM mails m 
+		                           LEFT JOIN division d on d.id =m.division_id
+								   LEFT JOIN subdivision sd on sd.id =m.subdivision_id
+								   WHERE m.type=1 and '.$searchval.'( '.$ms_qry.')'.$dtqry.' ORDER BY m.id DESC');
+							   
+		$mails=$query->result_array();
+		if(!empty($mails)){$i=0;
+			foreach($mails as $row){
+				$from_address_qry = $this->db->query('SELECT title FROM mail_address WHERE (mail_id = "'.$row['id'].'" and type=1)');
+				$from_mail_address =$from_address_qry->row_array();
+				$mails[$i]['from']=$from_mail_address;
+				
+				$to_address_qry = $this->db->query('SELECT title FROM mail_address WHERE (mail_id = "'.$row['id'].'" and type=2)');
+				$to_mail_adress =$to_address_qry->result_array();
+				$res_toadd ="";
+				foreach($to_mail_adress as $toadd){
+					$res_toadd .= $toadd['title'].", ";
+				}
+				 $mails[$i]['to'] = rtrim($res_toadd,", ");
+				 
+				 $cc_address_qry = $this->db->query('SELECT title FROM mail_address WHERE (mail_id = "'.$row['id'].'" and type=3)');
+				$cc_mail_adress =$cc_address_qry->result_array();
+				$res_ccadd ="";
+				foreach($cc_mail_adress as $ccadd){
+					$res_ccadd .= $ccadd['title'].", ";
+				}
+				 $mails[$i]['cc'] = rtrim($res_ccadd,", ");
+				 
+				$i++;
+			}//echo "<pre>";print_r($mails);
+			
+			return $mails;
+		}
+	}
+	
+	
+	function division_list($division_id='',$subdiv_id='')
+	{
+		$ms_session = $this->session->userdata('mail_status');
+		$mail_status = isset($ms_session)?$ms_session:1;
+		if($mail_status == 2)
+			$ms_qry = ' and m.status=2';
+		else if($mail_status == 1)
+			$ms_qry = ' and m.status=1';
+		else if($mail_status == 0)
+			$ms_qry = ' and (m.status=1 or m.status=2 or m.status=3)';
+			
+		$condition = "m.type=1";
+		if($subdiv_id)
+			$condition = "m.type=1 and m.division_id=$division_id and m.subdivision_id=$subdiv_id";
+		else if($division_id)
+			$condition = "m.type=1 and m.division_id=$division_id";
+		
+		$query = $this->db->query('SELECT m.*,d.division  FROM mails m 
+		                           LEFT JOIN division d on d.id =m.division_id WHERE '.$condition.$ms_qry);
+		$mails = $query->result_array();
+		if(!empty($mails)){$i=0;
+			foreach($mails as $row){
+				$from_address_qry = $this->db->query('SELECT title FROM mail_address WHERE (mail_id = "'.$row['id'].'" and type=1)');
+				$from_mail_address =$from_address_qry->row_array();
+				$mails[$i]['from']=$from_mail_address;
+				
+				$to_address_qry = $this->db->query('SELECT title FROM mail_address WHERE (mail_id = "'.$row['id'].'" and type=2)');
+				$to_mail_adress =$to_address_qry->result_array();
+				$res_toadd ="";
+				foreach($to_mail_adress as $toadd){
+					$res_toadd .= $toadd['title'].", ";
+				}
+				 $mails[$i]['to'] = rtrim($res_toadd,", ");
+				
+				 $cc_address_qry = $this->db->query('SELECT title FROM mail_address WHERE (mail_id = "'.$row['id'].'" and type=3)');
+				$cc_mail_adress =$cc_address_qry->result_array();
+				$res_ccadd ="";
+				foreach($cc_mail_adress as $ccadd){
+					$res_ccadd .= $ccadd['title'].", ";
+				}
+				 $mails[$i]['cc'] = rtrim($res_ccadd,", ");
+				 
+				$i++;
+			}
+		return $mails;
+		}
+	}
+	
+	function inmail_insert($data,$edit_mailid='')
+	{
+		//echo "<pre>";print_r($data);die;
+	
+		if($edit_mailid=='')
+		{
+			
+			$row = $this->db->query("SELECT mail_no, created_on FROM mails WHERE type=1 ORDER BY mail_no DESC LIMIT 1");
+			$mail = $row->row_array();			
+			
+			$mail_created = date('Y', strtotime($mail['created_on']));	
+			$current_year = date("Y");
+			if($mail_created == $current_year){
+				$exploded = explode("_",$mail['mail_no']);
+				$exact_mailno = (int)$exploded[1];
+				$mail['mail_no'] = $exact_mailno;
+				$mail_no = $mail['mail_no'] + 1;
+				$mail_no = date("y")."_".str_pad($mail_no, 4, '0', STR_PAD_LEFT);
+			}else{
+				$mail['mail_no'] = 0;
+				$mail_no = $mail['mail_no'] + 1;
+				$mail_no = date("y")."_".str_pad($mail_no, 4, '0', STR_PAD_LEFT);
+			}
+			
+			$result = $this->db->query("INSERT INTO mails ('date', 'mail_no', 'mail_ref', 'type', 'subject', 'language', 'status', 'division_id', 'subdivision_id', 'validation', 'recieved_date', 'created_on', 'created_by', 'updated_on', 'updated_by') 
+		VALUES ('{$data['date']}','".$mail_no."','{$data['mail_ref']}', '{$data['type']}', '{$data['subject']}', '{$data['language']}', '{$data['status']}', '{$data['division_id']}', '{$data['subdivision_id']}', '{$data['validation']}', '{$data['recieved_date']}', '{$data['created_on']}', '{$data['created_by']}', '{$data['updated_on']}', '{$data['updated_by']}')");
+			$last_insert_id=$this->db->insert_id();
+			
+			if($data['comments']){
+				$session=$this->session->userdata('check_login');
+				$date=date('d-m-Y H:i:s');
+				$active=1;
+				$users_id=$session['login_id'];
+				$res =$this->db->query("INSERT INTO comments ('comments', 'date', 'active', 'users_id', 'mails_id') VALUES ('{$data['comments']}', '$date', '$active', '$users_id', '$last_insert_id')");
+			}
+			if($data['from_new']!='|' and $data['from_new']!=''){
+				$data['from_new']=rtrim($data['from_new'],"| ");
+				$query = $this->db->query('SELECT * FROM address_book WHERE `id`='.$data['from_new']);
+				$row = $query->row();
+				$res =$this->db->query("INSERT INTO mail_address ('title','address1','address2','address3', 'city', 'state', 'country', 'pincode', 'mail_id','type') VALUES('$row->title', '$row->address1', '$row->address2', '$row->address3', '$row->city', '$row->state', '$row->country', '$row->pincode', $last_insert_id, 1)");
+			}
+			
+			if($data['to_new']!='|' and $data['to_new']!=''){
+				$data['to_new']=rtrim($data['to_new'],"| ");
+				$to=explode("|",$data['to_new']);
+				foreach($to as $to_id){
+					$query = $this->db->query('SELECT * FROM address_book WHERE `id`='.$to_id);
+					$row = $query->row();
+					$res =$this->db->query("INSERT INTO mail_address ('title','address1','address2','address3', 'city', 'state', 'country', 'pincode', 'mail_id','type') VALUES('$row->title', '$row->address1', '$row->address2', '$row->address3', '$row->city', '$row->state', '$row->country', '$row->pincode', $last_insert_id, 2)");
+				}
+			}
+			
+			if($data['cc_new']!='|' and $data['cc_new']!=''){
+				$data['cc_new']=rtrim($data['cc_new'],"| ");
+				$cc=explode("|",$data['cc_new']);
+				foreach($cc as $cc_id){
+					$query = $this->db->query('SELECT * FROM address_book WHERE `id`='.$cc_id);
+					$row = $query->row();
+					$res =$this->db->query("INSERT INTO mail_address ('title','address1','address2','address3', 'city', 'state', 'country', 'pincode', 'mail_id','type') VALUES('$row->title', '$row->address1', '$row->address2', '$row->address3', '$row->city', '$row->state', '$row->country', '$row->pincode', $last_insert_id, 3)");
+				}
+			}
+			
+			if($result){
+				$session=$this->session->userdata('check_login');
+				$action="New Inmail with Mail No ".$mail_no." has been created by ".$session['login_name'];
+				$date=date('d-m-Y H:i:s');
+				$active=1;
+				$users_id=$session['login_id'];
+				$res =$this->db->query("INSERT INTO log ('action', 'date', 'active', 'users_id', 'mails_id') VALUES ('$action', '$date', '$active', '$users_id', '$last_insert_id')");
+			}
+			
+		}else{
+			
+			$result = $this->db->query("UPDATE mails SET date='{$data['date']}',
+			 mail_ref='{$data['mail_ref']}',
+			 type = '{$data['type']}',
+			 subject = '{$data['subject']}',
+			 language = '{$data['language']}',
+			 status = '{$data['status']}',
+			 division_id = '{$data['division_id']}',
+			 subdivision_id = '{$data['subdivision_id']}',
+			 validation = '{$data['validation']}',
+			 recieved_date = '{$data['recieved_date']}',
+			 created_on = '{$data['created_on']}',
+			 created_by = '{$data['created_by']}', 
+			 updated_on = '{$data['updated_on']}', 
+			 updated_by = '{$data['updated_by']}'
+			 WHERE id =".$edit_mailid);
+			  
+			  if($data['comments']){
+				$session=$this->session->userdata('check_login');
+				$date=date('d-m-Y H:i:s');
+				$active=1;
+				$users_id=$session['login_id'];
+				/*$res =$this->db->query("UPDATE comments SET comments = '{$data['comments']}',
+				date = '$date',
+				active = '$active',
+				users_id = '$users_id'
+				WHERE mails_id =". $edit_mailid);*/
+				
+				$del = $this->db->query("DELETE FROM comments WHERE  mails_id =". $edit_mailid);
+				
+				$res =$this->db->query("INSERT INTO comments ('comments', 'date', 'active', 'users_id', 'mails_id') VALUES ('{$data['comments']}', '$date', '$active', '$users_id', '$edit_mailid')");				
+			}
+			
+			  $delete=$this->db->query("DELETE FROM mail_address WHERE `mail_id`=$edit_mailid");
+			  
+			  if($data['from_new']!='|' and $data['from_new']!=''){
+				$data['from_new']=rtrim($data['from_new'],"|");
+					$query = $this->db->query('SELECT * FROM address_book WHERE `id`='.$data['from_new']);
+					$row = $query->row();
+					$res =$this->db->query("INSERT INTO mail_address ('title','address1','address2','address3', 'city', 'state', 'country', 'pincode', 'mail_id','type') VALUES('$row->title', '$row->address1', '$row->address2', '$row->address3', '$row->city', '$row->state', '$row->country', '$row->pincode', $edit_mailid, 1)");
+			
+			}
+			
+			if($data['to_new']!='|' and $data['to_new']!=''){
+				$data['to_new']=rtrim($data['to_new'],"| ");
+				$to=explode("|",$data['to_new']);
+				foreach($to as $to_id){
+					$query = $this->db->query('SELECT * FROM address_book WHERE `id`='.$to_id);
+					$row = $query->row();
+					$res =$this->db->query("INSERT INTO mail_address ('title','address1','address2','address3', 'city', 'state', 'country', 'pincode', 'mail_id','type') VALUES('$row->title', '$row->address1', '$row->address2', '$row->address3', '$row->city', '$row->state', '$row->country', '$row->pincode', $edit_mailid, 2)");
+				}
+			}
+			
+			if($data['cc_new']!='|' and $data['cc_new']!=''){
+				$data['cc_new']=rtrim($data['cc_new'],"| ");
+				$cc=explode("|",$data['cc_new']);
+				foreach($cc as $cc_id){
+					$query = $this->db->query('SELECT * FROM address_book WHERE `id`='.$cc_id);
+					$row = $query->row();
+					$res =$this->db->query("INSERT INTO mail_address ('title','address1','address2','address3', 'city', 'state', 'country', 'pincode', 'mail_id','type') VALUES('$row->title', '$row->address1', '$row->address2', '$row->address3', '$row->city', '$row->state', '$row->country', '$row->pincode', $edit_mailid, 3)");
+				}
+			}
+			
+			if($result){
+				$session=$this->session->userdata('check_login');
+				$action="Inmail with Mail No ".$data['mailno']." has been updated by ".$session['login_name'];
+				$date=date('d-m-Y H:i:s');
+				$active=1;
+				$users_id=$session['login_id'];
+				$res =$this->db->query("INSERT INTO log ('action', 'date', 'active', 'users_id', 'mails_id') VALUES ('$action', '$date', '$active', '$users_id', '$edit_mailid')");
+			}
+			
+		}
+		if($result)
+			return true;
+		else
+			return false;
+	}
+	
+	function edit_staging($mailid)
+	{
+		$query = $this->db->query('SELECT m.*, c.comments FROM mails m
+		LEFT JOIN comments c ON m.id = c.mails_id 
+		WHERE ( m.id = '.$mailid.')');
+		$mail_row = $query->row_array();
+		if($mail_row){
+					
+			$from_address_qry = $this->db->query('SELECT ab.id, ma.title FROM mail_address ma
+			JOIN address_book ab ON ma.title=ab.title
+			WHERE (ma.mail_id = "'.$mail_row['id'].'" and ma.type=1)');
+			$from_mail_address =$from_address_qry->row_array();
+			$mail_row['from']=$from_mail_address;
+			
+			$to_address_qry = $this->db->query('SELECT ab.id, ma.title FROM mail_address ma
+			JOIN address_book ab ON ma.title=ab.title
+			WHERE (ma.mail_id = "'.$mail_row['id'].'" and ma.type=2)');
+			$to_mail_adress =$to_address_qry->result_array();
+			$res_toadd ="";
+			$res_toid="";
+			foreach($to_mail_adress as $toadd){
+				$res_toid .= $toadd['id']."|";
+				$res_toadd .= $toadd['title']."~";
+			}
+			$mail_row['to'] = rtrim($res_toadd,"~");
+			$mail_row['to_id'] = rtrim($res_toid,"|");
+			
+			$cc_address_qry = $this->db->query('SELECT ab.id, ma.title FROM mail_address ma
+			JOIN address_book ab ON ma.title=ab.title
+			WHERE (ma.mail_id = "'.$mail_row['id'].'" and ma.type=3)');
+			$cc_mail_adress =$cc_address_qry->result_array();
+			$res_ccadd ="";
+			$res_ccid ="";
+			foreach($cc_mail_adress as $ccadd){
+				$res_ccid .= $ccadd['id']."|";
+				$res_ccadd .= $ccadd['title']."~";
+			}
+			$mail_row['cc'] = rtrim($res_ccadd,"~");
+			$mail_row['cc_id'] = rtrim($res_ccid,"|");//echo "<pre>";print_r($mail_row);
+			return $mail_row;
+		}
+
+	}
+	
+	function create_distributed_list($mailids)
+	{
+		$mail_id=explode(",",$mailids);
+		foreach($mail_id as $mailid){
+			$qry = $this->db->query("SELECT validation FROM mails WHERE id=".$mailid );
+			$res = $qry->row_array();
+			if($res['validation']==1 or $res['validation']==2){
+			$result = $this->db->query("UPDATE mails SET `status`=1 WHERE `id`=".$mailid);
+		
+		if($result)
+			echo true;
+		else
+			echo false;
+			}
+		}
+	}
+	
+	function fetch_mail()
+	{
+		$db = $this->db;
+		$result = $db->query("SELECT id,title FROM address_book ");
+		
+		$data = array();
+		foreach ($result->result() as $row)
+		{
+			$data[] = $row->title;
+			//$data[] = array("value"=>$row->id,"label"=>$row->title);	
+		}	
+		return ($data);
+	}
+	
+	function add_address($val)
+	{	 
+		$qry = $this->db->query("SELECT * from address_book where type = 2 ORDER BY id DESC" );
+		if($qry->num_rows() > TEMP_ADDRESS_COUNT ){
+			$rows = $qry->num_rows() - TEMP_ADDRESS_COUNT;
+			$result = $this->db->query("DELETE FROM address_book WHERE id in(SELECT id FROM address_book WHERE type=2  LIMIT 0,".$rows.")" ); 
+		}
+		$res = $this->db->query("INSERT INTO address_book ('name','address1','address2','address3','title','city','state','country','pincode','type','active') VALUES ('".$val['name']."','".$val['address1']."','".$val['address2']."','".$val['address3']."','".$val['title']."','".$val['city']."','".$val['state']."','".$val['country']."','".$val['pincode']."','".$val['type']."',1)");
+		
+		$result = $this->db->insert_id();
+		$newresult = $this->db->query("SELECT id,title FROM address_book WHERE id =".$result);
+		$data = array();
+		foreach ($newresult->result() as $row)
+		{
+			$data['address_id'] = $row->id;
+			$data['title'] = $row->title;	
+		}
+		return $data; 
+		
+	}
+	
+	function fetch_address_id($title)
+	{
+		$newresult = $this->db->query("SELECT `id`,`title` FROM `address_book` WHERE  title =  '".$title."'");		
+		$data = array();
+		foreach ($newresult->result() as $row)
+		{
+			$data[] = $row->id;
+		}
+		return $data; 
+	}
+	
+	
+	function  fetch_title($title)
+	{
+		$newresult = $this->db->query("SELECT `title` FROM `address_book` WHERE  title =  '".$title."'");		
+		$data = array();
+		foreach ($newresult->result() as $row)
+		{
+			$data[] = $row->title;
+		}
+		return $data; 
+		
+	}
+	
+	function inmailview($mailid)
+	{
+		$query = $this->db->query('SELECT m.*, d.division, s.subdivision, u.firstname FROM mails m 
+		                           LEFT JOIN division d on d.id =m.division_id
+								   LEFT JOIN subdivision s on s.id =m.subdivision_id
+								   LEFT JOIN users u ON u.id = m.owner
+								   WHERE m.type=1 and m.id='.$mailid);
+		$mails=$query->row_array();
+		if(!empty($mails)){
+				$from_address_qry = $this->db->query('SELECT * FROM mail_address WHERE (mail_id = "'.$mails['id'].'" and type=1)');
+				$from_mail_address =$from_address_qry->row_array();
+				$mails['from']=$from_mail_address;
+				
+				$to_address_qry = $this->db->query('SELECT * FROM mail_address WHERE (mail_id = "'.$mails['id'].'" and type=2)');
+				$to_mail_adress =$to_address_qry->result_array();
+				$mails['to']=$to_mail_adress;
+				 
+				 $cc_address_qry = $this->db->query('SELECT * FROM mail_address WHERE (mail_id = "'.$mails['id'].'" and type=3)');
+				$cc_mail_adress =$cc_address_qry->result_array();
+				$mails['cc'] = $cc_mail_adress;		
+			//echo "<pre>";print_r($mails);die;			
+			return $mails;
+		}
+	}
+	
+	function email_details($id)
+	{
+		$qry = $this->db->query("SELECT * FROM mail_address WHERE id=".$id);
+		$mail_address =$qry->row_array();
+		return $mail_address;
+	}
+	
+	
+	function search_total_rows($title,$url= '')
+	{	
+	$title = SQLite3::escapeString($title);
+		$ms_session = $this->session->userdata('mail_status');
+		$mail_status = isset($ms_session)?$ms_session:1;
+		if($mail_status == 2)
+			$ms_qry = ' ma.status=2';
+		else if($mail_status == 1)
+			$ms_qry = ' ma.status=1';
+		else if($mail_status == 0)
+			$ms_qry = ' (ma.status=1 or ma.status=2 or ma.status=3)';
+		$condition = "";
+		$condition = "and (ma.subject  LIKE  '".'%'.$title.'%'."' or ma.mail_ref  LIKE  '".'%'.$title.'%'."' or c.comments LIKE  '".'%'.$title.'%'."') ";
+			
+		if(($url === '/mailmanagement/outmail/outmaillist') || ($url === '/mailmanagement/outmail/outmailentry')){
+			
+			$query = $this->db->query("SELECT ma.*, c.comments FROM mails ma
+			LEFT JOIN comments c ON c.mails_id = ma.id
+			WHERE ".$ms_qry." and  ma.type ='2' ".$condition." GROUP BY ma.id ORDER BY ma.id DESC  ");
+		}else{
+			$query = $this->db->query("SELECT ma.*,c.comments,(SELECT divi.division FROM division divi  WHERE divi.id = ma.division_id and ma.type= '1') as division FROM mails ma 
+			LEFT JOIN comments c ON c.mails_id = ma.id
+			WHERE ".$ms_qry." and ma.type ='1' ".$condition."  GROUP BY ma.id ORDER BY ma.id DESC  ");	
+		}
+		$mails_count=$query->num_rows();
+		return $mails_count;
+	}
+	
+	
+	function search_subject($title,$url= '',$limit='',$start='')
+	{	
+	$title = SQLite3::escapeString($title);
+		$ms_session = $this->session->userdata('mail_status');
+		$mail_status = isset($ms_session)?$ms_session:1;
+		if($mail_status == 2)
+			$ms_qry = ' ma.status=2';
+		else if($mail_status == 1)
+			$ms_qry = ' ma.status=1';
+		else if($mail_status == 0)
+			$ms_qry = ' (ma.status=1 or ma.status=2)';
+		$condition = "";
+		$condition = "and (ma.subject  LIKE  '".'%'.$title.'%'."' or ma.mail_ref  LIKE  '".'%'.$title.'%'."' or c.comments LIKE  '".'%'.$title.'%'."') ";
+		if($limit!='')
+	   		$limit = " LIMIT $start,$limit";
+		if(($url === '/mailmanagement/outmail/outmaillist') || ($url === '/mailmanagement/outmail/outmailentry')){
+			
+			$query = $this->db->query("SELECT ma.*, c.comments,md.title as `from`, mb.title as `to`, mc.title as `cc` FROM mails ma
+			LEFT JOIN comments c ON c.mails_id = ma.id
+			LEFT JOIN mail_address md on md.mail_id =ma.id AND md.type=1
+			LEFT JOIN mail_address mb on mb.mail_id =ma.id AND mb.type=2
+			LEFT JOIN mail_address mc on mc.mail_id =ma.id AND mc.type=3
+			WHERE ".$ms_qry." and  ma.type ='2' ".$condition." GROUP BY ma.id ORDER BY ma.id DESC ".$limit);
+		}else{
+			
+			$query = $this->db->query("SELECT ma.*,c.comments,(SELECT divi.division FROM division divi  WHERE divi.id = ma.division_id and ma.type= '1') as division,md.title as `from`, mb.title as `to`, mc.title as `cc` FROM mails ma 
+			LEFT JOIN comments c ON c.mails_id = ma.id
+			LEFT JOIN mail_address md on md.mail_id =ma.id AND md.type=1
+			LEFT JOIN mail_address mb on mb.mail_id =ma.id AND mb.type=2
+			LEFT JOIN mail_address mc on mc.mail_id =ma.id AND mc.type=3
+			WHERE ".$ms_qry." and ma.type ='1' ".$condition."  GROUP BY ma.id ORDER BY ma.id DESC  ".$limit);	
+		}
+		
+		$mails=$query->result_array();
+		if(!empty($mails)){$i=0;
+			/*foreach($mails as $row){
+				
+				$from_address_qry = $this->db->query('SELECT title FROM mail_address WHERE (mail_id = "'.$row['id'].'" and type=1)');
+				$from_mail_address =$from_address_qry->row_array();
+				$mails[$i]['from']=$from_mail_address;
+				
+				$to_address_qry = $this->db->query('SELECT title FROM mail_address WHERE (mail_id = "'.$row['id'].'" and type=2)');
+				$to_mail_adress =$to_address_qry->result_array();
+				$res_toadd ="";
+				foreach($to_mail_adress as $toadd){
+					$res_toadd .= $toadd['title'].", ";
+				}
+				 $mails[$i]['to'] = rtrim($res_toadd,", ");
+				 
+				 $cc_address_qry = $this->db->query('SELECT title FROM mail_address WHERE (mail_id = "'.$row['id'].'" and type=3)');
+				$cc_mail_adress =$cc_address_qry->result_array();
+				$res_ccadd ="";
+				foreach($cc_mail_adress as $ccadd){
+					$res_ccadd .= $ccadd['title'].", ";
+				}
+				 $mails[$i]['cc'] = rtrim($res_ccadd,", ");
+				 
+				$i++;
+			}	*/
+				
+			return $mails;
+		}
+	}
+	
+	function search_mails_count($data)
+	{	
+		$subdivision = isset($data['subdivision'])?$data['subdivision']:'';
+		$division = isset($data['division'])?$data['division']:'';
+		$search_by = isset($data['search_by'])?$data['search_by']:'';
+		$search_by_txt =isset($data['search_by_txt'])?$data['search_by_txt']:'';
+		$to_datepicker = isset($data['to_datepicker'])?$data['to_datepicker']:'';
+    	$from_datepicker = isset($data['from_datepicker'])?$data['from_datepicker']:'';
+		$type = isset($data['type'])?$data['type']:'';
+		(!$search_by)? ''  : $search_by;
+		 
+		
+		$mail_status = isset($data['status'])?$data['status']:0;
+		if($mail_status == 2)
+			$ms_qry = ' ma.status=2';
+		else if($mail_status == 1)
+			$ms_qry = ' ma.status=1';
+		else if($mail_status == 0)
+			$ms_qry = ' (ma.status=1 or ma.status=2)';
+			
+		$where_for_to ='';		 
+		$where = $ms_qry." and ma.type =  '".$type."' ";
+		
+		if($division){
+			$where .= " and ( ma.division_id LIKE '".$division."' ) ";			
+		}
+		if($subdivision){
+			$where .= " and ( ma.division_id LIKE '".$division."' and ma.subdivision_id LIKE '".$subdivision."' ) ";			
+		}
+		
+		if($search_by == '1'){
+			$where_for_to = "JOIN mail_address madd ON madd.mail_id = ma.id ";
+			$where .= "and madd.type = 1 and madd.title LIKE '%".$search_by_txt."%'";			
+		}
+		
+		if($search_by == '2'){
+			$where_for_to = "JOIN mail_address madd  ON madd.mail_id = ma.id "; 
+			$where .= " and madd.type = 2 and madd.title LIKE '%".$search_by_txt."%' ";
+		}
+		
+		if($search_by == '4'){
+			$where .= "and cm.comments LIKE '%".$search_by_txt."%' ";
+		}
+		if($search_by == '5'){
+			$where_for_to = "JOIN mail_address madd  ON madd.mail_id = ma.id ";
+			$where .= "and madd.type = 3 and madd.title LIKE '%".$search_by_txt."%' ";
+		}
+		if(!empty($search_by_txt) && $search_by == '3'){				
+				$where .= " and ma.subject LIKE '%".$search_by_txt."%'";
+		}
+		if($from_datepicker && $to_datepicker){
+			$where.="and ((substr(ma.recieved_date, 7, 4) ||  '-' || substr(ma.recieved_date, 4, 2) ||  '-' ||  substr(ma.recieved_date, 1, 2)) BETWEEN '".date("Y-m-d",strtotime($from_datepicker))."'  AND '".date("Y-m-d",strtotime($to_datepicker))."') ";
+			
+		}	
+		
+		$query = $this->db->query("SELECT DISTINCT ma.*,d.division, (SELECT subdivi.code FROM subdivision subdivi  WHERE subdivi.id = ma.subdivision_id and ma.type= '1') as subdivision,(SELECT mail_add.title FROM mail_address mail_add  WHERE mail_add.mail_id = ma.id and ma.type= '1') as from_mails FROM mails ma LEFT JOIN division d on d.id =ma.division_id LEFT JOIN subdivision subdiv ON ma.division_id = subdiv.id LEFT JOIN comments cm  ON cm.mails_id = ma.id  WHERE ".$where.$where_for_to." ORDER BY ma.id DESC  ");
+		
+		$mails_count=$query->num_rows();
+		return $mails_count;
+	}
+	
+	function search_mails($data,$limit='',$start='')
+	{	
+		//echo "<pre>";print_r($data);die;
+		$subdivision = isset($data['subdivision'])?$data['subdivision']:'';
+		$division = isset($data['division'])?$data['division']:'';
+		$search_by = isset($data['search_by'])?$data['search_by']:'';
+		$search_by_txt =isset($data['search_by_txt'])?$data['search_by_txt']:'';
+		$to_datepicker = isset($data['to_datepicker'])?$data['to_datepicker']:'';
+    	$from_datepicker = isset($data['from_datepicker'])?$data['from_datepicker']:'';		
+		$with_comm = isset($data['with_comm'])?$data['with_comm']:'';
+		$type = isset($data['type'])?$data['type']:'';
+		(!$search_by)? ''  : $search_by;
+		 
+		
+		if($with_comm == '0'){
+		$comment_condition = 'LEFT JOIN comments cm  ON cm.mails_id = ma.id  ';	
+		}elseif($with_comm == '1'){
+		$comment_condition = 'JOIN comments cm  ON cm.mails_id != ma.id  ';		
+		}else{
+		$comment_condition = 'JOIN comments cm  ON cm.mails_id = ma.id  ';		
+		}
+		
+		$mail_status = isset($data['status'])?$data['status']:0;
+		if($mail_status == 2)
+			$ms_qry = ' ma.status=2';
+		else if($mail_status == 1)
+			$ms_qry = ' ma.status=1';
+		else if($mail_status == 0)
+			$ms_qry = ' (ma.status=1 or ma.status=2)';
+			
+		$where_for_to ='';		 
+		$where = $ms_qry." and ma.type =  '".$type."' ";
+		
+		if($division){
+			$where .= " and ( ma.division_id LIKE '".$division."' ) ";			
+		}
+		if($subdivision){
+			$where .= " and ( ma.division_id LIKE '".$division."' and ma.subdivision_id LIKE '".$subdivision."' ) ";			
+		}
+		
+		if($search_by == '1'){
+			$where_for_to = "JOIN mail_address madd ON madd.mail_id = ma.id ";
+			$where .= "and madd.type = 1 and madd.title LIKE '%".$search_by_txt."%'";			
+		}
+		
+		if($search_by == '2'){
+			$where_for_to = "JOIN mail_address madd  ON madd.mail_id = ma.id "; 
+			$where .= " and madd.type = 2 and madd.title LIKE '%".$search_by_txt."%' ";
+		}
+		
+		if($search_by == '4'){
+			$where .= "and cm.comments LIKE '%".$search_by_txt."%' ";
+		}
+		if($search_by == '5'){
+			$where_for_to = "JOIN mail_address madd  ON madd.mail_id = ma.id ";
+			$where .= "and madd.type = 3 and madd.title LIKE '%".$search_by_txt."%' ";
+		}
+		if(!empty($search_by_txt) && $search_by == '3'){				
+				$where .= " and ma.subject LIKE '%".$search_by_txt."%'";
+		}
+		if($from_datepicker && $to_datepicker){
+			$where.="and ((substr(ma.recieved_date, 7, 4) ||  '-' || substr(ma.recieved_date, 4, 2) ||  '-' ||  substr(ma.recieved_date, 1, 2)) BETWEEN '".date("Y-m-d",strtotime($from_datepicker))."'  AND '".date("Y-m-d",strtotime($to_datepicker))."') ";
+			
+		}	
+		if($limit!='')
+	   		$limit = " LIMIT $start,$limit";		
+		
+		$query = $this->db->query("
+		SELECT DISTINCT ma.*,d.division, (SELECT subdivi.code FROM subdivision subdivi  WHERE subdivi.id = ma.subdivision_id and ma.type= '1') as subdivision,(SELECT mail_add.title FROM mail_address mail_add  WHERE mail_add.mail_id = ma.id and ma.type= '1') as from_mails 
+		FROM mails ma 
+		LEFT JOIN division d on d.id =ma.division_id 
+		LEFT JOIN subdivision subdiv ON ma.division_id = subdiv.id 
+		$comment_condition
+		WHERE ".$where.$where_for_to." ORDER BY ma.id DESC ".$limit);
+	
+		$mails=$query->result_array();
+		
+		if(!empty($mails)){$i=0;
+			foreach($mails as $row){
+				
+				$from_address_qry = $this->db->query('SELECT id,title FROM mail_address WHERE (mail_id = "'.$row['id'].'" and type=1)');
+				$from_mail_adress =$from_address_qry->result_array();
+				$res_fromadd = $rowid ="";
+				foreach($from_mail_adress as $fromadd){
+					$res_fromadd .= $fromadd['title'].", ";					
+				}
+				$mails[$i]['from'] = rtrim($res_fromadd,", ");
+				
+				$to_address_qry = $this->db->query('SELECT id,title FROM mail_address WHERE (mail_id = "'.$row['id'].'" and type=2)');
+				$to_mail_adress =$to_address_qry->result_array();
+				$res_toadd = $rowid ="";
+				foreach($to_mail_adress as $toadd){
+					$res_toadd .= $toadd['title'].", ";					
+				}
+				$mails[$i]['to'] = rtrim($res_toadd,", ");
+				
+				$cc_address_qry = $this->db->query('SELECT id,title FROM mail_address WHERE (mail_id = "'.$row['id'].'" and type=3)');
+				$cc_mail_adress =$cc_address_qry->result_array();
+				$res_ccadd = $rowid ="";
+				foreach($cc_mail_adress as $ccadd){
+					$res_ccadd .= $ccadd['title'].", ";					
+				}
+				$mails[$i]['cc'] = rtrim($res_ccadd,", ");
+				
+				$i++;
+			 }			
+		}
+		
+		return $mails;
+		
+	}
+	
+	function insert_search_history($data)
+	{	//echo "<pre>";print_r($data);die;
+		$created_date=date('d-m-Y H:i:s');
+		$data['subject'] = '';
+		$data['from_mails'] = '';
+		$data['to'] = '';
+		$data['comments'] = '';
+		$data['copy_to'] = '';
+		if($data['search_by'] == 3)
+			$data['subject'] = $data['search_by_txt'];
+		else if($data['search_by'] == 1)
+			$data['from_mails'] = $data['search_by_txt'];
+		else if($data['search_by'] == 2)
+			$data['to'] = $data['search_by_txt'];
+		else  if($data['search_by'] == 4)
+			$data['comments'] = $data['search_by_txt'];
+		else  if($data['search_by'] == 5)
+			$data['copy_to'] = $data['search_by_txt'];
+			
+		if($data['template_id']==''){
+			$res = $this->db->query("INSERT INTO `search_template` (`template_name`, `type`, `subject`, `division`, `subdivision`, `from_date`, `to_date`, `to`, `from_mails`, `created_on`, `user_id`, `active`,`comments`, `status`, `copy_to`) VALUES('{$data['save_template_txt']}', {$data['type']}, '{$data['subject']}', '{$data['division']}', '{$data['subdivision']}', '{$data['from_datepicker']}', '{$data['to_datepicker']}', '{$data['to']}', '{$data['from_mails']}', '".$created_date."', {$data['user_id']}, 1, '{$data['comments']}', '{$data['status']}', '{$data['copy_to']}')");
+		}else{
+			$res=$this->db->query("UPDATE search_template SET
+			template_name = '{$data['save_template_txt']}',
+			type = {$data['type']},
+			subject = '{$data['subject']}', 
+			division = '{$data['division']}',
+			subdivision = '{$data['subdivision']}',
+			from_date = '{$data['from_datepicker']}',
+			to_date = '{$data['to_datepicker']}',
+			`to` = '{$data['to']}',
+			from_mails = '{$data['from_mails']}',
+			created_on = '".$created_date."',
+			user_id = {$data['user_id']},
+			active = 1,
+			comments = '{$data['comments']}',
+			copy_to = '{$data['copy_to']}',
+			status = '{$data['status']}' WHERE id=".$data['template_id']);
+		}
+		if($res)
+		return true;
+		else 
+		return false; 
+	}
+	
+	
+	function list_today_search()
+	{
+		$insert_history = $this->db->query('SELECT DISTINCT id,template_name from "search_template" ');
+		$data = array();
+		$data =$insert_history->result_array();
+		return $data;		
+	}
+	
+	function get_searchterms($template_name)
+	{
+		$query = $this->db->query("SELECT * FROM search_template where template_name= '".$template_name."' ");
+		$result = $query->row_array();
+		return $result;
+	}
+	
+	function get_templates()
+	{
+		$result = $this->db->query('SELECT DISTINCT id,template_name from "search_template" ');		
+		$templates = $result->result_array();
+		$json=array();
+		$temp_id=array();
+		foreach($templates as $row){
+			$json[] = array("label"=>$row['template_name'],"value"=>$row['id']);
+		}
+		
+		return json_encode($json);
+	}
+	
+	
+	function check_user($data)
+	{
+		$ses = $this->session->userdata('check_login');
+		$cond = '';
+		if($data['subdiv_id'])
+			$cond = " and subdivision_id=".$data['subdiv_id'];
+		
+		$qry = $this->db->query("SELECT id FROM users WHERE username = '".$ses['login_name']."' and division_id=".$data['div_id'].$cond );
+		$res = $qry->row_array();
+		if($res){
+			if($res['id'] == $ses['login_id'])//
+				echo true;
+		}else
+			echo false;
+	}
+	
+	function edit_division($data)
+	{
+		$session=$this->session->userdata('check_login');
+		$ac = "";
+		if($data['action_date']){
+			$ac = ", action_date = '{$data['action_date']}'";
+			$action="Inmail with Mail No ".$data['mail_no'].": Action date edited by ".$session['login_name'];
+		}
+		
+		$cl = "";
+		if($data['close_date']){
+			$cl = ", close_date = '{$data['close_date']}' ";
+			$action="Inmail with Mail No ".$data['mail_no'].": Close date edited by ".$session['login_name'];
+		}	
+		if($data['subdiv_id']) $s = $data['subdiv_id'];
+		else $s = '';
+			
+		$result = $this->db->query("UPDATE mails SET division_id={$data['div_id']},
+			 subdivision_id='".$s."' ".$ac."". $cl ."
+			 WHERE id=".$data['mail_id']);
+		if($result){
+			if($data['action_date'] and $data['close_date'])
+				$action="Inmail with Mail No ".$data['mail_no'].": Action date and Close date edited by ".$session['login_name'];
+			else
+				$action="Inmail with Mail No ".$data['mail_no'].": Division edited by ".$session['login_name'];
+				$date=date('d-m-Y H:i:s');
+				$active=1;
+				$users_id=$session['login_id'];
+				$res =$this->db->query("INSERT INTO log ('action', 'date', 'active', 'users_id', 'mails_id') VALUES ('$action', '$date', '$active', '$users_id', ".$data['mail_id'].")");
+				if($res)
+					echo true;
+		}
+		else
+			echo false; 
+	}
+
+	
+	function close_mail($data)
+	{
+		$result = $this->db->query("UPDATE mails SET status=2 WHERE id = ".$data['mail_id']);
+		if($result)
+			echo true;
+		else 
+			echo false;
+	}
+	
+	function delete_staging_list($mailids)
+	{
+		$mail_id=explode(",",$mailids);
+		foreach($mail_id as $mailid){
+				$result = $this->db->query("DELETE FROM mails WHERE `id`=".$mailid);
+		}
+		if($result)
+			echo true;
+		else
+			echo false;
+	}
+	
+	function delete_template($template_id)
+	{
+		$result = $this->db->query("DELETE FROM search_template WHERE `id`=".$template_id);
+		if($result)
+			echo true;
+		else
+			echo false;
+	}
+	
+	function subject_autocomp($term)
+	{
+		$query = $this->db->query("SELECT Distinct subject FROM mails WHERE subject LIKE '%".$term['subject']."%' ");
+		$subject = $query->result_array();
+		$json=array();
+    	foreach($subject as $sub){
+         	$json[]=$sub['subject'];
+   		}
+		return json_encode($json);
+	}
+	
+	function from_autocomp($term)
+	{
+		$query = $this->db->query("SELECT Distinct title FROM address_book WHERE title LIKE '%".$term['from']."%' ");
+		$subject = $query->result_array();
+		$json=array();
+    	foreach($subject as $sub){
+         	$json[]=$sub['title'];
+   		}
+		return json_encode($json);
+	}
+	
+	function generate_csv(){
+		$results = $this->db->query('SELECT * FROM mails');		
+		$fp = fopen('mailaddressxlsformat.csv', 'w+');
+		$subject = $results->result_array();
+		
+		foreach($subject as $sub){
+         	fputcsv($fp, array_values($sub));
+   		}
+		
+		header('Location: ../mailaddressxlsformat.csv');
+		
+		/*while ($row = $results->row_array()) {
+			fputcsv($fp, array_values($row));
+		}*/
+ 		//fputcsv($fp,array('tripid','startingLoc','endingLoc')); 
+		fclose($fp);
+	}
+	
+}
+	

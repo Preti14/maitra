@@ -1,0 +1,32 @@
+Listing 1. Opening a file and reading it with fgets
+
+$file_handle = fopen("myfile", "r");
+while (!feof($file_handle)) {
+   $line = fgets($file_handle);
+   echo $line;
+}
+fclose($file_handle);
+
+Although these functions are familiar to most long-time programmers, let me break them down. Effectively, you perform the following steps:
+
+    Open the file. $file_handle stores a reference to the file itself.
+    Check whether you are already at the end of the file.
+    Keep reading the file until you are at the end, printing each line as you read it.
+    Close the file.
+
+With that in mind, I'll review each file function used here.
+fopen
+
+The fopen function creates the connection to the file. I say "creates the connection" because in addition to opening a file, fopen can open a URL:
+
+$fh = fopen("http://127.0.0.1/", "r");
+
+This line of code creates a connection to the page above and allows you to start reading it much like a local file.
+
+Note: The "r" used in fopen indicates that the file is open for reading only. Because writing to files is beyond the scope of this article, I'm not going to list all the other options. However, you should change "r" to "rb" if you're reading from binary files for cross-platform compatibility. You'll see an example of this later.
+feof
+
+The feof command detects whether you have already read to the end of the file and returns True or False. The loop in Listing 1 continues until you have reached the end of the file "myfile." Note that feof also returns False if you're reading a URL and the socket has timed out because you no longer have data to read.
+fclose
+
+Skipping ahead to the end of Listing 1, fclose serves the opposite function of fopen: It closes the connection to the file or URL. You are no longer able to read from the file or socket after this function.

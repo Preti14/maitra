@@ -1,0 +1,213 @@
+@charset "utf-8";
+select .select-option
+{
+	line-height:24px;
+	height:24px;
+	padding-left:10px;
+	margin-top:5px;
+}
+#cmts_table td.cmts_left
+{
+	text-align:left;
+	border:none;
+	padding:4px;
+}
+#cmts_table td.cmts_right
+{
+	text-align:right;
+	border:none;
+	padding:4px;
+	
+}
+#cmts_table td
+{
+	border:none;
+}
+#cmts_table tr.cmts_details
+{
+	height:5px;
+	font-size:12px;
+	border-bottom: 1px solid #d3d3d3;
+	background-color:#f3f3f3;
+}
+@media screen{
+.only-print
+	{
+		display:none;
+	}
+}
+@media print
+{    
+table{
+	border-collapse:collapse; max-width:  900px;
+ }
+table tr td{ padding:10px !important}
+.no-print, .no-print *
+    {
+        display: none !important;
+    }
+	
+	.box-content
+	{
+		border:none;
+		padding:0px;
+		
+	}
+}
+.table.table-striped.add-style td.add-letter-space{ word-break: break-all;
+   word-wrap: break-word; letter-spacing:-1px;}
+.table.table-striped.add-style td{word-wrap: break-word !important ;
+word-break: break-all !important; }
+.table.table-striped.add-style td.sub-length{word-break: normal !important; word-wrap: normal !important ;}
+ @media (min-width:1024px) and (max-width:2400px) {
+.table.table-striped.add-style th{font-size:13px;}
+.table.table-striped.add-style td{ font-size:13px; padding:7px;}
+.none-padding-space{ padding:0 !important;}
+  }
+   
+ @media (min-width:768px) and (max-width:1023px) {
+.table.table-striped.add-style th{font-size:10px;}
+.table.table-striped.add-style td{ font-size:11px;}
+  }
+a.link-color{ color:#333;}
+a.red-icon{ color:#cc0000;}
+.m-b-14{ margin-bottom:14px !important;}
+
+.vcenter {
+    /*vertical-align: middle !important;*/
+    text-align: center;
+}
+
+#todays_list .view, #staging_list .view {
+    color: #2FA4E7;
+    cursor: pointer;
+}
+
+#todays_list .view:hover, #staging_list .view:hover {
+    text-decoration: underline;
+}
+
+.pending, .in_progress, .hold, .ready_for_collection, .cancelled {
+    display: inline-block;
+    border-radius: 4px;
+    font-weight: bold;
+    padding: 0 4px;
+}
+
+.no_status {
+    display: inline-block;
+}
+
+.pending {
+    background-color: #FFAAAA !important;
+}
+
+.in_progress {
+    background-color: #FFFFAA;
+}
+
+.hold {
+    background-color: #FFFFDD;
+}
+
+.ready_for_collection {
+    background-color: #AAFFAA;
+}
+
+.cancelled {
+    background-color: #CFCFCF;
+}
+
+.word_break {
+    word-break: break-all;
+}
+
+.border_bottom {
+    border-bottom: 1px solid #2FA4E7;
+}
+
+.initial_hide {
+    display: none;
+}
+
+/* Add more Contact Email */
+#button_pro .contact_email,
+#edit_button_pro .contact_email,
+#clone_button_pro .contact_email {
+    display: inline-block;
+    width: 88%;
+}
+#button_pro .contact_email.additional_contact_email,
+#edit_button_pro .contact_email.additional_contact_email,
+#clone_button_pro .contact_email.additional_contact_email {
+    width: 81%;
+    margin-top: 10px;
+}
+#view_button_pro .contact_email.additional_contact_email {
+    margin-top: 3px;
+}
+/* Remove Paddin */
+.no-gutter [class*="-4"] {
+    padding-left:0;
+    padding-right:0;
+}
+
+/* Sort */
+th a,
+th a:hover {
+    color: #FFF;
+    text-decoration: none;
+}
+th.ascending:after,
+th.descending:after {
+    content: "";
+    float: right;
+    height: auto;
+    width: auto;
+    margin-top: 7px;
+    position: static;
+    visibility: hidden;
+}
+th.ascending:after {
+    border-width: 0 4px 4px;
+    border-style: solid;
+    border-color: #000 transparent;
+    visibility: visible;
+}
+th.descending:after {
+    border-bottom: none;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 4px solid #000;
+    visibility: visible;
+}
+
+
+
+#accordion .main-accordion {
+	 background-image: linear-gradient(#016ba7, #016ba7 60%, #016ba7);
+    background-repeat: no-repeat;
+    border-bottom: 1px solid #178acc;
+    filter: none; border-radius:3px; -weblit-border-radius:3px; -moz-border-radius:3px;
+	
+}
+#accordion .main-accordion a{color:#fff;}
+* {
+  margin: 0;
+}
+html, body {
+  height: 100%;
+}
+.page-wrap {
+  min-height: 100%;
+  /* equal to footer height */
+  margin-bottom: -39px; 
+}
+.page-wrap:after {
+  content: "";
+  display: block;
+}
+.site-footer, .page-wrap:after {
+  height: 39px; 
+}
+ 
