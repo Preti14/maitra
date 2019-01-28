@@ -3,6 +3,7 @@
 /**
  * ExportData is the base class for exporters to specific file formats. See other
  * classes below.
+ * Updated for testing...
  */
 abstract class ExportData {
 	protected $exportTo; // Set in constructor to one of 'browser', 'file', 'string'
